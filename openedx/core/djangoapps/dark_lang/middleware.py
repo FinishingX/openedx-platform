@@ -89,6 +89,27 @@ class DarkLangMiddleware(MiddlewareMixin):
         if not DarkLangConfig.current().enabled:
             return
 
+        # Modified by Developer
+        user_lang = (
+            request.user.is_authenticated
+            and get_user_preference(request.user, DARK_LANGUAGE_KEY)
+            or None
+        )
+
+        query_lang = request.GET.get("lang")
+        # import pdb;pdb.set_trace()
+        default_site_lang = query_lang or settings.LANGUAGE_CODE
+        if request.method == "PATCH" or query_lang:
+            try:
+                if query_lang:
+                    request.session["NEW_LG"] = query_lang
+                else:
+                    request_body = json.loads(request.body)
+                    if request_body.get("pref-lang", None):
+                        request.session["NEW_LG"] = request_body.get("pref-lang")
+            except Exception as e:
+                log.info("Failed to load language")
+
         self._clean_accept_headers(request)
 
     def process_response(self, request, response):
@@ -150,9 +171,6 @@ class DarkLangMiddleware(MiddlewareMixin):
             # Get the request user's dark lang preference
             preview_lang = get_user_preference(request.user, DARK_LANGUAGE_KEY)
 
-        # User doesn't have a dark lang preference, so just return
-        if not preview_lang:
-            return
-
-        # Set the response language_cookie to the requested preview lang
-        set_language_cookie(request, response, preview_lang)
+        default_site_lang = request.session.get("NEW_LG") or settings.LANGUAGE_CODE
+        language = preview_lang or default_site_lang
+        set_language_cookie(request, response, language)

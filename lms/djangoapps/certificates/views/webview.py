@@ -120,6 +120,13 @@ def _update_certificate_context(context, course, course_overview, user_certifica
         date = display_date_for_certificate(course_overview, user_certificate)
     else:
         date = display_date_for_certificate(course, user_certificate)
+
+    # Added by Developer
+    if date:
+        context['certificate_date_issued'] = strftime_localized(date, settings.CERTIFICATE_DATE_FORMAT)
+    else:
+        context['certificate_date_issued'] = ""
+
     # Translators:  The format of the date includes the full name of the month
     context['certificate_date_issued'] = strftime_localized(date, settings.CERTIFICATE_DATE_FORMAT)
 
@@ -244,10 +251,14 @@ def _update_course_context(request, context, course, platform_name):
     """
     Updates context dictionary with course info.
     """
+    # Added by Developer
     context['full_course_image_url'] = request.build_absolute_uri(course_image_url(course))
     course_title_from_cert = context['certificate_data'].get('course_title', '')
+    course_desc_from_cert = context['certificate_data'].get('description', '')
     accomplishment_copy_course_name = course_title_from_cert if course_title_from_cert else course.display_name
+    context['course_title_from_cert'] = course_title_from_cert
     context['accomplishment_copy_course_name'] = accomplishment_copy_course_name
+    context['accomplishment_course_description'] = course_desc_from_cert
     course_number = course.display_coursenumber if course.display_coursenumber else course.number
     context['course_number'] = course_number
     context['idv_enabled_for_certificates'] = settings.FEATURES.get('ENABLE_CERTIFICATES_IDV_REQUIREMENT')

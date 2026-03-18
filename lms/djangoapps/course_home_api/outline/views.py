@@ -363,6 +363,12 @@ class OutlineTabView(RetrieveAPIView):
             'welcome_message_html': welcome_message_html,
         }
         context = self.get_serializer_context()
+        # Added by Developer
+        context.update({
+            'include_vertical': True,
+            'extra_fields': ['special_exam_info', 'completion_stat'],
+            'enable_prerequisite_block_type': True,
+        })
         context['course_overview'] = course_overview
         context['enable_links'] = show_enrolled or allow_public
         context['enrollment'] = enrollment

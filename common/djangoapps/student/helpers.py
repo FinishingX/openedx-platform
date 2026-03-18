@@ -748,7 +748,26 @@ def do_create_account(form, custom_form=None):
         log.exception(f"UserProfile creation failed for user {user.id}.")
         raise
 
+    # Added by Developer
+    enroll_into_free_courses(user)
+    if form.cleaned_data.get("receive_promotions") == "true":
+        from subscribers.models import PromotionSubscriber
+        PromotionSubscriber.create_or_update(user)
+
     return user, profile, registration
+
+
+def enroll_into_free_courses(user):
+    """
+    Enrolled new registered users in free courses
+    """
+    from course_manage.models import CourseManage
+    courses = CourseManage.objects.filter(is_free_course=True)
+    for course in courses:
+        try:
+            CourseEnrollment.enroll(user, course.course_id)
+        except Exception as e:
+            log.info("Failed to enroll {} user in {} course".format(user.username, course.id))
 
 
 def get_resume_urls_for_enrollments(user, enrollments):

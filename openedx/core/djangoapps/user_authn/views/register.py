@@ -613,6 +613,13 @@ class RegistrationView(APIView):
         if response:
             return response
 
+        # Added by Developer
+        email = data.get('email')
+        domain = email.split('@')[-1]
+        if domain in getattr(settings, 'RESTRICTED_REGISTRATION_DOMAINS', []):
+            errors= {'email': [{'user_message': _("Please enter a business email address. We do not offer a free demo for individuals, only for employees representing a company.")}]}
+            return self._create_response(request, errors, status_code=400, error_code="invalid_email_error")
+
         response, user = self._create_account(request, data)
         if response:
             return response
