@@ -8,7 +8,7 @@ This middleware must be placed before the LocaleMiddleware, but after
 the SessionMiddleware.
 """
 
-
+import json
 from django.conf import settings
 from django.utils.translation.trans_real import parse_accept_lang_header
 from django.utils.deprecation import MiddlewareMixin
@@ -97,7 +97,6 @@ class DarkLangMiddleware(MiddlewareMixin):
         )
 
         query_lang = request.GET.get("lang")
-        # import pdb;pdb.set_trace()
         default_site_lang = query_lang or settings.LANGUAGE_CODE
         if request.method == "PATCH" or query_lang:
             try:
