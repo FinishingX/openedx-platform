@@ -7,13 +7,13 @@ import json
 
 from django.conf import settings
 from django.http import HttpResponse
-from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.csrf import csrf_exempt
 
 from openedx.core.djangoapps.lang_pref import LANGUAGE_KEY
 from openedx.core.djangoapps.lang_pref.helpers import get_language_cookie, set_language_cookie
 
 
-@ensure_csrf_cookie
+@csrf_exempt
 def update_language(request):
     """
     Update the language cookie.
