@@ -166,7 +166,7 @@ class Command(BaseCommand):
         for course_key in course_keys:
             try:
                 count += 1
-                CoursewareSearchIndexer.do_course_reindex(store, course_key)
+                # CoursewareSearchIndexer.do_course_reindex(store, course_key)
                 success += 1
                 if count % 10 == 0 or count == total:
                     t = time() - start
