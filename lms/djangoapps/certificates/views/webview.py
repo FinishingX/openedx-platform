@@ -332,6 +332,11 @@ def _update_context_with_user_info(context, user, user_certificate):
     context['accomplishment_copy_name'] = user_fullname
     context['accomplishment_copy_username'] = user.username
 
+    try:
+        context['accomplishment_cert_date'] = user_certificate.created_date.strftime("%d %B, %Y")
+    except Exception as e:
+        context['accomplishment_cert_date'] = ""
+
     context['accomplishment_more_title'] = _("More Information About {user_name}'s Certificate:").format(
         user_name=user_fullname
     )
