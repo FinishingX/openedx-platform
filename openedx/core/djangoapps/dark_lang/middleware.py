@@ -9,9 +9,13 @@ the SessionMiddleware.
 """
 
 import json
+import logging
+
 from django.conf import settings
 from django.utils.translation.trans_real import parse_accept_lang_header
 from django.utils.deprecation import MiddlewareMixin
+
+log = logging.getLogger(__name__)
 
 from openedx.core.djangoapps.dark_lang import DARK_LANGUAGE_KEY
 from openedx.core.djangoapps.dark_lang.models import DarkLangConfig
@@ -87,6 +91,13 @@ class DarkLangMiddleware(MiddlewareMixin):
         Prevent user from requesting un-released languages except by using the preview-lang query string.
         """
         if not DarkLangConfig.current().enabled:
+            # Even when DarkLangConfig is disabled, enforce LANGUAGE_CODE as the site default.
+            # Django's LocaleMiddleware prioritises the browser's Accept-Language header over
+            # LANGUAGE_CODE, so without this an English browser always gets English regardless
+            # of the configured LANGUAGE_CODE.  We only override when the user has no explicit
+            # language preference cookie — if they do, we leave their choice intact.
+            if not request.COOKIES.get(settings.LANGUAGE_COOKIE_NAME):
+                request.META['HTTP_ACCEPT_LANGUAGE'] = settings.LANGUAGE_CODE
             return
 
         # Modified by Developer
