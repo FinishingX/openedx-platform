@@ -1,0 +1,27 @@
+## mako
+<%! from django.utils.translation import gettext as _ %>
+
+
+Herzlichen Glückwunsch! | Congratulations! 
+
+
+Sie haben die folgende Teilnahmebescheinigung erworben: | You have earned the following certificate of attendance:
+
+${certificate_url}
+
+
+
+Dies ist eine automatisch generierte E-Mail, bitte nicht darauf antworten. | This email was generated automatically. Please do not reply.
+
+Bei Rückfragen wenden Sie sich bitte direkt an Ihre internen Ansprechpartner oder an unseren Kundenservice unter info@finishingx.de. | For questions, please contact your internal administrator or our customer service at info@finishingx.de.
+
+
+MfG | Sincerely, 
+FinishingX.de
+
+ANSCHRIFT | POSTAL ADDRESS: https://finishingx.de/about
+GESCHÄFTSFÜHRER | CEO: https://finishingx.de/about
+DATENSCHUTZ | PRIVACY STATEMENT: https://finishingx.de/privacy
+IMPRESSUM | TERMS OF USE: https://finishingx.de/tos
+
+

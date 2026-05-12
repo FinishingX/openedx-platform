@@ -1,0 +1,24 @@
+## mako
+<%! from django.utils.translation import gettext as _ %>
+
+Fast geschafft! Verwenden Sie den folgenden Link, um Ihr Benutzerkonto zu aktivieren: | You're almost there! Use the link to activate your account:
+
+% if is_secure:
+https://${ site }/activate/${ key }
+% else:
+http://${ site }/activate/${ key }
+% endif
+
+Bei Fragen wenden Sie sich bitte an unseren Kundendienst unter info@finishingx.de | If you need further assistance, please contact our customer support: info@finishingx.de
+
+Diese E-Mail wurde automatisch bei der Erstellung eines Demo-Accounts auf unserer Website generiert. | This e-mail was automatically generated upon creation of a demo account on our website.
+
+
+
+MfG | Sincerely, 
+FinishingX.de
+
+ANSCHRIFT | POSTAL ADDRESS: https://finishingx.de/about
+GESCHÄFTSFÜHRER | CEO: https://finishingx.de/about
+DATENSCHUTZ | PRIVACY STATEMENT: https://finishingx.de/privacy
+IMPRESSUM | TERMS OF USE: https://finishingx.de/tos

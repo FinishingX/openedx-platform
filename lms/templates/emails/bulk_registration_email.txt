@@ -1,0 +1,14 @@
+<%! from django.utils.translation import gettext as _ %>
+
+Diese E-Mail wurde automatisch bei der Erstellung eines Accounts auf unserer Website generiert. | This e-mail was automatically generated upon creation of a demo account on our website.
+
+Bei Fragen wenden Sie sich bitte an unseren Kundendienst unter info@finishingx.de | If you need further assistance, please contact our customer support: info@finishingx.de
+
+
+MfG | Sincerely, 
+FinishingX.de
+
+ANSCHRIFT | POSTAL ADDRESS: https://finishingx.de/about
+GESCHÄFTSFÜHRER | CEO: https://finishingx.de/about
+DATENSCHUTZ | PRIVACY STATEMENT: https://finishingx.de/privacy
+IMPRESSUM | TERMS OF USE: https://finishingx.de/tos

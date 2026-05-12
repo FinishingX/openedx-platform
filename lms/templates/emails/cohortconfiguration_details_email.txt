@@ -1,0 +1,4 @@
+<%! from django.utils.translation import gettext as _ %>
+${_("Hi,")}
+
+${_("We have attached Cohort configuration report to this email.")}

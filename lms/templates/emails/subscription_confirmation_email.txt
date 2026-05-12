@@ -1,0 +1,11 @@
+## mako
+<%! from django.utils.translation import gettext as _ %>
+
+${_("Thank you for your inquiry. We will get back to you as soon as possible.")}
+
+${_("This email was generated automatically. Please do not reply.")}
+
+${_("If you have any questions, please contact our friendly customer service at info@finishingx.de.")}
+
+${_("Sincerely")}, FinishingX.de
+
