@@ -56,6 +56,77 @@ def generate_certificate_task(user, course_key, generation_mode=None, delay_seco
                                               delay_seconds=delay_seconds)
 
 
+def generate_progress_certificate_task(user, course_key, progress, generation_mode=None,
+                                       delay_seconds=CERTIFICATE_DELAY_SECONDS):
+    """
+    Create a task to generate a certificate for a progress-based course run.
+
+    Unlike the regular generation path this does NOT check whether the student has a passing grade.
+    The caller is responsible for verifying that the student's completion progress meets the
+    configured threshold before calling this function.
+
+    The progress value is stored in GeneratedCertificate.grade as a normalized decimal string
+    (e.g. 80 % -> "0.8") to stay consistent with how grade-based certificates store
+    course_grade.percent.
+
+    Args:
+        user: user for whom to generate a certificate
+        course_key: course run key for which to generate a certificate
+        progress: course completion progress as a percentage (0.0 – 100.0)
+        generation_mode: used when emitting an event. Options are "self" and "batch".
+    """
+    if _is_ccx_course(course_key):
+        log.info(f'{course_key} is a CCX course. Progress-based certificate cannot be generated for {user.id}.')
+        return False
+
+    if is_beta_tester(user, course_key):
+        log.info(f'{user.id} is a beta tester in {course_key}. Progress-based certificate cannot be generated.')
+        return False
+
+    enrollment_mode = _get_enrollment_mode(user, course_key)
+
+    if not _can_generate_certificate_common(user, course_key, enrollment_mode):
+        log.info(
+            f'Common eligibility check failed. Progress-based certificate cannot be generated '
+            f'for {user.id} : {course_key}.'
+        )
+        return False
+
+    # Normalize progress (0–100) to the 0.0–1.0 decimal string used for grade-based certs.
+    # Round to 3 decimal places so the result fits within GeneratedCertificate.grade (max_length=5).
+    progress_grade = str(round(progress / 100.0, 3))
+
+    log.info(
+        f'About to create a progress-based certificate task for {user.id} : {course_key} '
+        f'with grade {progress_grade}'
+    )
+
+    try:
+        # Run the same openedx-filters hook so third-party plugins can still intercept.
+        user, course_key, enrollment_mode, status, _, generation_mode = CertificateCreationRequested.run_filter(
+            user=user,
+            course_key=course_key,
+            mode=enrollment_mode,
+            status=None,
+            grade=None,
+            generation_mode=generation_mode,
+        )
+    except CertificateCreationRequested.PreventCertificateCreation as exc:
+        raise CertificateGenerationNotAllowed(str(exc)) from exc
+
+    kwargs = {
+        'student': str(user.id),
+        'course_key': str(course_key),
+        'enrollment_mode': str(enrollment_mode),
+        'course_grade': progress_grade,
+    }
+    if generation_mode is not None:
+        kwargs['generation_mode'] = generation_mode
+
+    generate_certificate.apply_async(countdown=delay_seconds, kwargs=kwargs)
+    return True
+
+
 def generate_allowlist_certificate_task(user, course_key, generation_mode=None,
                                         delay_seconds=CERTIFICATE_DELAY_SECONDS):
     """

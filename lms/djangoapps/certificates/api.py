@@ -26,6 +26,7 @@ from lms.djangoapps.branding import api as branding_api
 from lms.djangoapps.certificates.config import AUTO_CERTIFICATE_GENERATION as _AUTO_CERTIFICATE_GENERATION
 from lms.djangoapps.certificates.data import CertificateStatuses
 from lms.djangoapps.certificates.generation_handler import generate_certificate_task as _generate_certificate_task
+from lms.djangoapps.certificates.generation_handler import generate_progress_certificate_task as _generate_progress_certificate_task
 from lms.djangoapps.certificates.generation_handler import is_on_certificate_allowlist as _is_on_certificate_allowlist
 from lms.djangoapps.certificates.models import (
     CertificateAllowlist,
@@ -253,6 +254,28 @@ def generate_certificate_task(user, course_key, generation_mode=None):
             themself) and "batch" for everything else.
     """
     return _generate_certificate_task(user, course_key, generation_mode)
+
+
+def generate_progress_certificate_task(user, course_key, progress, generation_mode=None):
+    """
+    Create a task to generate a certificate for a progress-based course run.
+
+    This bypasses the passing-grade requirement used by the regular certificate path. The
+    caller must have already verified that the student's completion progress meets the
+    configured threshold for the course.
+
+    The progress value is written to GeneratedCertificate.grade as a normalized decimal
+    string (e.g. 80 % stored as "0.8") so it is consistent with how grade-based
+    certificates store course_grade.percent.
+
+    Args:
+        user: user for whom to generate a certificate
+        course_key: course run key for which to generate a certificate
+        progress: course completion progress as a percentage (0.0 – 100.0)
+        generation_mode: Used when emitting an event. Options are "self" (implying the
+            user generated the cert themself) and "batch" for everything else.
+    """
+    return _generate_progress_certificate_task(user, course_key, progress, generation_mode)
 
 
 def certificate_downloadable_status(student, course_key):
