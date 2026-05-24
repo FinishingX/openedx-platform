@@ -1166,6 +1166,22 @@ def get_cert_data(student, course, enrollment_mode, course_grade=None):
         return cert_data
 
     certificates_enabled_for_course = certs_api.has_self_generated_certificates_enabled(course.id)
+
+    # Added by Developer
+    try:
+        from course_manage.models import CourseManage
+        from course_progress.models import CourseProgress
+        course_manage = CourseManage.objects.get(course_id=course.id)
+        if course_manage.certificate_type == "progress-based":
+            passing_progress = float(course_manage.passing_progress)
+            progress = CourseProgress.get_course_progress(student, course.id)
+            if progress < passing_progress:
+                return
+            else:
+                return cert_data
+    except CourseManage.DoesNotExist:
+        pass
+
     if course_grade is None:
         course_grade = CourseGradeFactory().read(student, course)
 
