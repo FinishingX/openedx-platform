@@ -201,8 +201,7 @@ def login_and_registration_form(request, initial_mode="login"):
         )
 
     enterprise_customer = enterprise_customer_for_request(request)
-
-    if should_redirect_to_authn_microfrontend() and \
+    if settings.FEATURES.get('ENABLE_AUTHN_MICROFRONTEND') and \
             not enterprise_customer and \
             not tpa_hint_provider and \
             not saml_provider:
