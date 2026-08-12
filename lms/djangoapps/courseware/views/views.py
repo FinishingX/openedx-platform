@@ -1179,7 +1179,7 @@ def get_cert_data(student, course, enrollment_mode, course_grade=None):
                 return
             else:
                 return cert_data
-    except CourseManage.DoesNotExist:
+    except Exception as e:
         pass
 
     if course_grade is None:

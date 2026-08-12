@@ -15,6 +15,40 @@ from openedx.core.djangoapps.user_api.preferences.api import get_user_preference
 from openedx.core.lib.mobile_utils import is_request_from_mobile_app
 
 
+def _active_tenant_explicitly_sets_language_code():
+    """
+    True unless an eox-tenant tenant is currently driving site configuration
+    (``settings.EDNX_TENANT_KEY`` set) AND that tenant's own lms_configs/studio_configs
+    JSON does NOT itself declare a ``LANGUAGE_CODE`` key.
+
+    Why this exists: once any eox-tenant TenantConfig has ``EDNX_USE_SIGNAL: true`` for
+    the current domain, eox-tenant swaps in ``TenantSiteConfigProxy`` as the site's
+    SiteConfiguration. Its ``get_value()`` doesn't check the tenant's own config dict —
+    it just does ``getattr(django.conf.settings, name, default)`` for whatever name is
+    asked for. Since ``LANGUAGE_CODE`` always exists on Django settings, this makes
+    ``site_configuration.helpers.get_value('LANGUAGE_CODE')`` unconditionally truthy for
+    *every* tenant, whether or not that tenant ever configured a language override.
+    Without this guard, ``process_request`` below would permanently force every visitor
+    to the platform's global default language on any tenant-mapped domain, silently
+    defeating DarkLangConfig-based language switching (cookie/session preference) even
+    when the tenant config never mentions LANGUAGE_CODE at all.
+    """
+    tenant_key = getattr(settings, 'EDNX_TENANT_KEY', None)
+    if not tenant_key:
+        return True  # no eox-tenant tenant active; normal SiteConfiguration semantics apply
+
+    try:
+        from eox_tenant.models import TenantConfig
+    except ImportError:
+        return True  # eox-tenant not installed; shouldn't happen if EDNX_TENANT_KEY is set, but don't break
+
+    tenant_config = TenantConfig.objects.filter(external_key=tenant_key).first()
+    if not tenant_config:
+        return True
+
+    return 'LANGUAGE_CODE' in (tenant_config.lms_configs or {}) or 'LANGUAGE_CODE' in (tenant_config.studio_configs or {})
+
+
 class LanguagePreferenceMiddleware(MiddlewareMixin):
     """
     Middleware for user preferences.
@@ -53,7 +87,9 @@ class LanguagePreferenceMiddleware(MiddlewareMixin):
             request.META[LANGUAGE_HEADER] = accept_header
 
         # Apply language specified in SiteConfiguration, ignoring user preferences.
-        if language := get_value('LANGUAGE_CODE'):
+        # (Skipped when an active eox-tenant tenant's config doesn't itself set
+        # LANGUAGE_CODE — see _active_tenant_explicitly_sets_language_code().)
+        if _active_tenant_explicitly_sets_language_code() and (language := get_value('LANGUAGE_CODE')):
             request.COOKIES[settings.LANGUAGE_COOKIE_NAME] = language
 
     def process_response(self, request, response):  # lint-amnesty, pylint: disable=missing-function-docstring
