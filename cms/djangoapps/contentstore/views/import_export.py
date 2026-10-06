@@ -29,6 +29,7 @@ from opaque_keys.edx.keys import CourseKey
 from opaque_keys.edx.locator import LibraryLocator
 from path import Path as path
 from storages.backends.s3boto3 import S3Boto3Storage
+from storages.utils import clean_name
 from user_tasks.conf import settings as user_tasks_settings
 from user_tasks.models import UserTaskArtifact, UserTaskStatus
 
@@ -299,6 +300,32 @@ def send_tarball(tarball, size):
     return response
 
 
+def _s3_export_download_url(storage, name):
+    """
+    Return a signed S3 URL that downloads the export tarball as a ``.tar.gz`` file.
+
+    django-storages saves ``*.tar.gz`` objects with ``Content-Encoding: gzip``
+    (from ``mimetypes.guess_type``), so browsers transparently gunzip the
+    download and save a plain ``.tar`` that cannot be re-imported. The
+    ``Response*`` overrides below replace those stored headers, and S3 only
+    honours them on signed requests, so the URL is always presigned against the
+    bucket, even when ``AWS_S3_CUSTOM_DOMAIN`` would make ``storage.url()``
+    return an unsigned URL.
+    """
+    filename = os.path.basename(name)
+    return storage.connection.meta.client.generate_presigned_url(
+        'get_object',
+        Params={
+            'Bucket': storage.bucket_name,
+            'Key': storage._normalize_name(clean_name(name)),  # pylint: disable=protected-access
+            'ResponseContentDisposition': f'attachment; filename="{filename}"',
+            'ResponseContentEncoding': 'identity',
+            'ResponseContentType': 'application/x-tgz',
+        },
+        ExpiresIn=storage.querystring_expire,
+    )
+
+
 @transaction.non_atomic_requests
 @ensure_csrf_cookie
 @login_required
@@ -393,13 +420,7 @@ def export_status_handler(request, course_key_string):
         if isinstance(artifact.file.storage, FileSystemStorage):
             output_url = reverse_course_url('export_output_handler', course_key)
         elif isinstance(artifact.file.storage, S3Boto3Storage):
-            filename = os.path.basename(artifact.file.name)
-            disposition = f'attachment; filename="{filename}"'
-            output_url = artifact.file.storage.url(artifact.file.name, parameters={
-                'ResponseContentDisposition': disposition,
-                'ResponseContentEncoding': 'application/octet-stream',
-                'ResponseContentType': 'application/x-tgz'
-            })
+            output_url = _s3_export_download_url(artifact.file.storage, artifact.file.name)
         else:
             output_url = artifact.file.storage.url(artifact.file.name)
     elif task_status.state in (UserTaskStatus.FAILED, UserTaskStatus.CANCELED):
