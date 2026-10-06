@@ -1,6 +1,7 @@
 """ URLs for User Authentication """
 
 from django.urls import include, path
+from django.views.generic.base import RedirectView
 
 from .views import auth, login, login_form
 
@@ -17,8 +18,10 @@ urlpatterns = [
 urlpatterns += [
     path('login', login_form.login_and_registration_form,
          {'initial_mode': 'login'}, name='signin_user'),
-    path('register', login_form.login_and_registration_form,
-         {'initial_mode': 'register'}, name='register_user'),
+    # FinishingX: self-service signup is disabled; send would-be registrants to the
+    # request-demo page instead. Login and password reset are unaffected.
+    path('register', RedirectView.as_view(url='/pages/request-demo/', permanent=False),
+         name='register_user'),
     path('password_assistance', login_form.login_and_registration_form,
          {'initial_mode': 'reset'}, name='password_assistance'),
 ]
